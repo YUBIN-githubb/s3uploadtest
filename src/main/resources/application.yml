@@ -6,6 +6,8 @@ spring:
   servlet:
     multipart:
       enabled: true
+      file-size-threshold: 0B
+      location: C:\Users\ASUS\yubin\temp
       max-file-size: 200MB
       max-request-size: 200MB
 
