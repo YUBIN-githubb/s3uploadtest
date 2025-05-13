@@ -10,6 +10,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,5 +41,31 @@ public class MultipartService {
         return (endTime - startTime) / 1000;
     }
 
+    public List<String> uploadMultipleViaMultipart(MultipartFile[] files) throws IOException {
+        return Arrays.stream(files)
+                .map(file -> {
+                    try {
+                        double startTime = System.currentTimeMillis();
+
+                        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                                .bucket(bucketName)
+                                .key(file.getOriginalFilename())
+                                .contentType(file.getContentType())
+                                .contentLength(file.getSize())
+                                .build();
+
+                        s3Client.putObject(putObjectRequest,
+                                RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+                        double endTime = System.currentTimeMillis();
+                        double duration = (endTime - startTime) / 1000;
+
+                        return file.getOriginalFilename() + " 업로드 완료 (" + duration + "초)";
+                    } catch (IOException e) {
+                        throw new UncheckedIOException("파일 업로드 실패: " + file.getOriginalFilename(), e);
+                    }
+                })
+                .collect(Collectors.toList());
+    }
 }
 
